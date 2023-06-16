@@ -8,6 +8,7 @@ from functools import partial
 def reweight_from_mixture(u_kn, trial_f_k, N_k):
     """eq. C3 of [Shirts, Chodera, 2008] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2671659/
     + intuition from [Shirts, 2017] https://arxiv.org/abs/1704.00891"""
+
     log_weights_n = logsumexp(trial_f_k - u_kn.T, b=N_k, axis=1)
     implied_f_k = -logsumexp(-u_kn - log_weights_n, axis=1) - np.log(np.sum(N_k))
     return implied_f_k
@@ -15,6 +16,7 @@ def reweight_from_mixture(u_kn, trial_f_k, N_k):
 
 def solve_mbar(u_kn, N_k):
     """self-consistent iteration, C.1 [Shirts, Chodera, 2008] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2671659/"""
+
     f_k = np.zeros(len(u_kn))
 
     for _ in range(1000):  # skip convergence checks, for simplicity
@@ -25,7 +27,8 @@ def solve_mbar(u_kn, N_k):
 
 def reweight_from_local_mixtures(trial_f_k, states, samples, neighborhoods):
     """variant: only reweight from user-specified neighborhoods of each state, rather than from all states.
-    (reweight_from_mixture, where neighborhoods[k] = set(range(K)) for all k.)
+
+    (reweight_from_mixture is a special case, where neighborhoods[k] = set(range(K)) for all k.)
 
     WARNING: Experimental, untested, likely incorrect.
 
@@ -55,8 +58,7 @@ def reweight_from_local_mixtures(trial_f_k, states, samples, neighborhoods):
         # interpret these neighboring states as a weighted mixture
         log_weights_n = logsumexp(trial_f_k[idxs] - u_kn.T, b=w_k, axis=1)
 
-        # compute Z_k / Z_mix
-        # Z_k / Z_mix = (Z_k / Z_neighborhood_k) * (Z_neighborhood_k / Z_mix)
+        # compute Z_k / Z_mix = (Z_k / Z_neighborhood_k) * (Z_neighborhood_k / Z_mix)
         assert k in idxs, "neighborhoods[k] should also contain k"
         log_target_n = -u_kn[idxs == k][0]
         delta_f_k_vs_neighborhood = -logsumexp(log_target_n - log_weights_n)
